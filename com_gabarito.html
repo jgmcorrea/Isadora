@@ -132,6 +132,8 @@
 
     <div class="toolbar">
       <button class="btn btn-primary" id="startBtn" type="button">Iniciar / reiniciar cronômetro</button>
+      <button class="btn btn-secondary" id="answersBtn" type="button">Mostrar gabarito</button>
+      <button class="btn btn-secondary" id="compareBtn" type="button">Comparar imagens</button>
     </div>
 
     <section class="layout">
@@ -166,9 +168,23 @@
           <p>O feedback sobre o erro e a regra de BPF aparecerá aqui.</p>
         </section>
 
+        <section class="card side-card hidden" id="answersPanel">
+          <h2>Gabarito comentado</h2>
+          <ol class="answer-list" id="answerList"></ol>
+        </section>
       </aside>
     </section>
   </main>
+
+  <div class="modal hidden" id="compareModal" role="dialog" aria-modal="true" aria-labelledby="compareTitle">
+    <div class="modal-content">
+      <div class="modal-top"><h2 id="compareTitle">Comparação para correção coletiva</h2><button class="btn btn-danger" id="closeModal" type="button">Fechar</button></div>
+      <div class="compare">
+        <figure><img src="bpf_com_erros.png" alt="Imagem com erros de BPF"><figcaption>Versão com erros</figcaption></figure>
+        <figure><img src="bpf_correta.png" alt="Imagem correta de BPF"><figcaption>Versão correta</figcaption></figure>
+      </div>
+    </div>
+  </div>
 
   <script>
     const errors = {
@@ -192,6 +208,7 @@
     const progressText = document.getElementById('progressText');
     const statusText = document.getElementById('statusText');
     const result = document.getElementById('result');
+    const answersPanel = document.getElementById('answersPanel');
     const hotspots = [...document.querySelectorAll('.hotspot')];
     let found = new Set();
     let clicks = 0;
@@ -213,7 +230,7 @@
       if (count === 10) {
         statusText.textContent = 'Concluído';
         result.className = 'card side-card result complete';
-        result.innerHTML = '<strong>Parabéns! Todos os erros foram encontrados.</strong><p>Aguarde a correção coletiva com o instrutor para revisar as regras de BPF.</p>';
+        result.innerHTML = '<strong>Parabéns! Todos os erros foram encontrados.</strong><p>Use o gabarito comentado para conduzir a discussão das ações corretivas com a equipe.</p>';
         stopTimer();
       }
     }
@@ -234,7 +251,7 @@
       stopTimer(); seconds = 180; timerEl.textContent = formatTime(seconds);
       interval = setInterval(() => {
         seconds--; timerEl.textContent = formatTime(seconds);
-        if (seconds <= 0) { stopTimer(); statusText.textContent = 'Tempo encerrado'; result.className = 'card side-card result complete'; result.innerHTML = '<strong>Tempo encerrado.</strong><p>Aguarde a correção coletiva com o instrutor.</p>'; }
+        if (seconds <= 0) { stopTimer(); statusText.textContent = 'Tempo encerrado'; result.className = 'card side-card result complete'; result.innerHTML = '<strong>Tempo encerrado.</strong><p>Você ainda pode clicar nas áreas para revisar o conteúdo e consultar o gabarito.</p>'; }
       }, 1000);
     }
     function stopTimer() { if (interval) { clearInterval(interval); interval = null; } }
@@ -246,6 +263,18 @@
       statusText.textContent = 'Em andamento'; updateStats();
     }
     document.getElementById('startBtn').addEventListener('click', () => { resetGame(); startTimer(); });
+    document.getElementById('answersBtn').addEventListener('click', () => {
+      const panel = answersPanel;
+      panel.classList.toggle('hidden');
+      document.getElementById('answersBtn').textContent = panel.classList.contains('hidden') ? 'Mostrar gabarito' : 'Ocultar gabarito';
+    });
+    document.getElementById('answerList').innerHTML = Object.entries(errors).map(([id, item]) => `<li><span class="num">${id}</span><div><b>${item.title}</b><small><strong>Regra:</strong> ${item.rule}<br><strong>Ação:</strong> ${item.action}</small></div></li>`).join('');
+
+    const modal = document.getElementById('compareModal');
+    document.getElementById('compareBtn').addEventListener('click', () => modal.classList.remove('hidden'));
+    document.getElementById('closeModal').addEventListener('click', () => modal.classList.add('hidden'));
+    modal.addEventListener('click', event => { if (event.target === modal) modal.classList.add('hidden'); });
+    document.addEventListener('keydown', event => { if (event.key === 'Escape') modal.classList.add('hidden'); });
     updateStats();
     startTimer();
   </script>
